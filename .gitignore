@@ -1,0 +1,17 @@
+/*
+ * Filename:git ignore
+ * Description: git ignore file
+ * Author: Stephen Henry
+ * Date: 10/14/2025
+ */
+
+
+# dependency files
+*.d
+
+# object files
+*.o
+
+# exe file
+
+*.exe
