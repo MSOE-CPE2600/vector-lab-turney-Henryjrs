@@ -1,99 +1,160 @@
 /*
-* Filename: VectorUI.c
-* Description: Vector Calculator
-* Author: Stephen Henry
-* Date: 10/3/2025
-* how to compile: gcc VectorCalc.c VectorMem.c VectorUI.c Vector.c -o VectorCalc
-*/
+ * Filename: VectorUI.c
+ * Description: Vector Calculator
+ * Author: Stephen Henry
+ * Date: 10/3/2025
+ * how to compile: gcc VectorCalc.c VectorMem.c VectorUI.c Vector.c -o VectorCalc
+ */
+
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include "VectorMem.h"
 #include "VectorCalc.h"
+#include "VectorUI.h"
+
+
+void trim_newline(char *s) {
+    size_t len = strlen(s);
+    if (len > 0 && s[len - 1] == '\n') {
+        s[len - 1] = '\0';
+    }
+}
+
+void print_help() {
+    printf("Usage:\n");
+    printf("  A= 1 2 3         Assign vector A\n");
+    printf("  B= 4 5 6         Assign vector B\n");
+    printf("  add              A + B = C, C * 2 = D, A + D = display, show B\n");
+    printf("  subtract         A - B = display\n");
+    printf("  dot              A . B = display\n");
+    printf("  cross            A x B = display\n");
+    printf("  scalar           C * 2 = D\n");
+    printf("  clear            Erase memory\n");
+    printf("  list             Display stored vectors\n");
+    printf("  exit             Quit program\n");
+}
 
 void run_ui() {
-    NamedVector storage[MAX_VECTORS];
-    int count = 0;
-    char line[100];
-
-    printf("Vector Calculator\n");
-    printf("Commands:\n");
-    printf("  A=1.0,2.0,3.0       (store vector A)\n");
-    printf("  add A B             (add vectors A and B)\n");
-    printf("  sub A B             (subtract B from A)\n");
-    printf("  mul A 2.5           (multiply A by scalar)\n");
-    printf("  exit                (quit)\n");
+    char input[100];
+    printf("Welcome to my Vector Calculator!! Let's get started...\n");
+    print_help();
 
     while (1) {
-        printf("\n> ");
-        if (!fgets(line, sizeof(line), stdin)) break;
+        printf("VectorCalc> ");
+        if (!fgets(input, sizeof(input), stdin)) break;
+        trim_newline(input);
 
-        // Remove whitespace
-        char cleaned[100];
-        int j = 0;
-        for (int i = 0; line[i]; i++) {
-            if (!isspace(line[i])) {
-                cleaned[j++] = line[i];
+        if (strcmp(input, "exit") == 0) break;
+        if (strcmp(input, "clear") == 0) { clear_vectors(); continue; }
+        if (strcmp(input, "list") == 0) { list_vectors(); continue; }
+        if (strcmp(input, "help") == 0) { print_help(); continue; }
+
+        if (strcmp(input, "add") == 0) {
+            Vector *a = get_vector("A");
+            Vector *b = get_vector("B");
+            if (!a || !b) {
+                printf("Vectors A and B must be assigned first.\n");
+                continue;
             }
+            Vector c = {"C", 0, 0, 0};
+            addvec(a, b, &c);
+            store_vector(c);
+            printf("C = A + B = %.2f %.2f %.2f\n", c.x, c.y, c.z);
+
+            Vector d = {"D", 0, 0, 0};
+            scalarvec(&c, 2.0, &d);
+            store_vector(d);
+            printf("D = C * 2 = %.2f %.2f %.2f\n", d.x, d.y, d.z);
+
+            Vector temp = {"", 0, 0, 0};
+            addvec(a, &d, &temp);
+            printf("A + D = %.2f %.2f %.2f\n", temp.x, temp.y, temp.z);
+
+            printf("B = %.2f %.2f %.2f\n", b->x, b->y, b->z);
+            continue;
         }
-        cleaned[j] = '\0';
 
-        if (strncmp(cleaned, "exit", 4) == 0) break;
+        if (strcmp(input, "subtract") == 0) {
+            Vector *a = get_vector("A");
+            Vector *b = get_vector("B");
+            if (!a || !b) {
+                printf("Vectors A and B must be assigned first.\n");
+                continue;
+            }
+            Vector result;
+            subvec(a, b, &result);
+            printf("A - B = %.2f %.2f %.2f\n", result.x, result.y, result.z);
+            continue;
+        }
 
-        if (strchr(cleaned, '=')) {
-            char name[20];
-            float x, y, z;
-            if (sscanf(cleaned, "%[^=]=%f,%f,%f", name, &x, &y, &z) == 4) {
-                store_vector(storage, &count, name, (Vector){x, y, z});
-                printf("Stored vector %s = (%.2f, %.2f, %.2f)\n", name, x, y, z);
-            } else {
-                printf("Invalid format. Use name=x,y,z\n");
+        if (strcmp(input, "dot") == 0) {
+            Vector *a = get_vector("A");
+            Vector *b = get_vector("B");
+            if (!a || !b) {
+                printf("Vectors A and B must be assigned first.\n");
+                continue;
             }
-        } else if (strncmp(cleaned, "add", 3) == 0) {
-            char a[20], b[20];
-            if (sscanf(cleaned, "add%s%s", a, b) == 2) {
-                Vector *va = get_vector(storage, count, a);
-                Vector *vb = get_vector(storage, count, b);
-                if (va && vb) {
-                    Vector result = add(*va, *vb);
-                    printf("Result: (%.2f, %.2f, %.2f)\n", result.x, result.y, result.z);
-                } else {
-                    printf("Error: One or both vectors not found.\n");
-                }
-            } else {
-                printf("Invalid add command.\n");
+            double result;
+            dotvec(a, b, &result);
+            printf("A . B = %.2f\n", result);
+            continue;
+        }
+
+        if (strcmp(input, "cross") == 0) {
+            Vector *a = get_vector("A");
+            Vector *b = get_vector("B");
+            if (!a || !b) {
+                printf("Vectors A and B must be assigned first.\n");
+                continue;
             }
-        } else if (strncmp(cleaned, "sub", 3) == 0) {
-            char a[20], b[20];
-            if (sscanf(cleaned, "sub%s%s", a, b) == 2) {
-                Vector *va = get_vector(storage, count, a);
-                Vector *vb = get_vector(storage, count, b);
-                if (va && vb) {
-                    Vector result = subtract(*va, *vb);
-                    printf("Result: (%.2f, %.2f, %.2f)\n", result.x, result.y, result.z);
-                } else {
-                    printf("Error: One or both vectors not found.\n");
-                }
-            } else {
-                printf("Invalid sub command.\n");
+            Vector result;
+            crossvec(a, b, &result);
+            printf("A x B = %.2f %.2f %.2f\n", result.x, result.y, result.z);
+            continue;
+        }
+
+        if (strcmp(input, "scalar") == 0) {
+            Vector *c = get_vector("C");
+            if (!c) {
+                printf("Vector C must be assigned first.\n");
+                continue;
             }
-        } else if (strncmp(cleaned, "mul", 3) == 0) {
-            char a[20];
-            float scalar;
-            if (sscanf(cleaned, "mul%s%f", a, &scalar) == 2) {
-                Vector *va = get_vector(storage, count, a);
-                if (va) {
-                    Vector result = scalar_multiply(*va, scalar);
-                    printf("Result: (%.2f, %.2f, %.2f)\n", result.x, result.y, result.z);
-                } else {
-                    printf("Error: Vector not found.\n");
-                }
-            } else {
-                printf("Invalid mul command.\n");
-            }
+            Vector d = {"D", 0, 0, 0};
+            scalarvec(c, 2.0, &d);
+            store_vector(d);
+            printf("D = C * 2 = %.2f %.2f %.2f\n", d.x, d.y, d.z);
+            continue;
+        }
+
+        char *lhs = strtok(input, "=");
+        char *rhs = strtok(NULL, "");
+
+        if (!rhs) {
+            Vector *v = get_vector(lhs);
+            if (v) printf("%s = %.2f %.2f %.2f\n", v->name, v->x, v->y, v->z);
+            else printf("Vector not found.\n");
+            continue;
+        }
+
+        char name[NAME_LEN];
+        sscanf(lhs, "%s", name);
+
+        char *tok1 = strtok(rhs, " ");
+        char *tok2 = strtok(NULL, " ");
+        char *tok3 = strtok(NULL, " ");
+
+        if (tok1 && tok2 && tok3) {
+            Vector result;
+            strncpy(result.name, name, NAME_LEN);
+            result.x = atof(tok1);
+            result.y = atof(tok2);
+            result.z = atof(tok3);
+            store_vector(result);
         } else {
-            printf("Invalid command.\n");
+            printf("Invalid input. Type 'help' for usage.\n");
         }
     }
+    printf("Thanks for trying out my Vector Calculator...\n");
 }

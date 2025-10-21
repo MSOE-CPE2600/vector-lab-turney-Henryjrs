@@ -1,37 +1,26 @@
-/*make_minimum_required(VERSION 4.0)
-project(Lab5 C)
+# Filename: VC_makefile
+# Description: Makefile for VectorCalc
+# Author: Stephen Henry
+# Date: 10/3/2025
+# How to compile: gcc -o VectorCalc VectorCalc.c Vector.c VectorUI.c VectorMem.c
 
-set(CMAKE_C_STANDARD 99)
+CC = gcc
+CFLAGS = -c -Wall
+LDFLAGS =
+SOURCES = VectorCalc.c Vector.c VectorUI.c VectorMem.c
+OBJECTS = $(SOURCES:.c=.o)
+EXECUTABLE = VectorCalc
 
-add_executable(Lab5 VectorCalc.c
-        VectorCalc.h
-        Vector.cpp
-        VectorMem.h
-        VectorMem.cpp
-        VectorUI.cpp
-        VectorUI.h)
-*/
+all: $(EXECUTABLE)
 
-
-CC=gcc
-CFLAGS=-c -Wall
-LDFLAGS=
-SOURCES= VectorCalc.c, Vector.c, VectorMem.c, VectorUI.c
-OBJECTS=$(SOURCES:.c=.o)
-EXECUTABLE=exename
-
-all: $(SOURCES) $(EXECUTABLE) 
-
-# pull in dependency info for *existing* .o files
 -include $(OBJECTS:.o=.d)
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 
-.c.o: 
+.c.o:
 	$(CC) $(CFLAGS) $< -o $@
 	$(CC) -MM $< > $*.d
 
 clean:
 	rm -rf $(OBJECTS) $(EXECUTABLE) *.d
-       
